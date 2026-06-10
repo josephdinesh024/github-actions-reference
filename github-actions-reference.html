@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Actions — Complete Pipeline Reference</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --bg4: #30363d;
+    --border: #30363d;
+    --border2: #21262d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --green: #3fb950;
+    --green-bg: #0d2119;
+    --blue: #58a6ff;
+    --blue-bg: #0c1f35;
+    --amber: #d29922;
+    --amber-bg: #2a1f00;
+    --red: #f85149;
+    --red-bg: #2d0f0e;
+    --purple: #bc8cff;
+    --purple-bg: #1e1232;
+    --teal: #39d353;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius: 8px;
+    --radius-sm: 5px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 14px; line-height: 1.6; }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 20px 0; }
+  .main { flex: 1; padding: 32px 40px; max-width: 900px; overflow-x: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar-title { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); padding: 0 16px 8px; }
+  .nav-item { display: block; padding: 6px 16px; font-size: 13px; color: var(--text2); cursor: pointer; border-left: 2px solid transparent; transition: all .15s; text-decoration: none; }
+  .nav-item:hover { color: var(--text); background: var(--bg3); }
+  .nav-item.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-bg); }
+  .nav-section { margin-top: 16px; }
+  .nav-divider { height: 1px; background: var(--border); margin: 12px 8px; }
+
+  /* ── Section ── */
+  .section { display: none; }
+  .section.active { display: block; }
+  .page-title { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
+
+  /* ── Cards ── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card-desc { font-size: 13px; color: var(--text2); margin-bottom: 12px; line-height: 1.6; }
+
+  /* ── Code blocks ── */
+  .code { background: var(--bg); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; overflow-x: auto; margin-bottom: 8px; white-space: pre; }
+  .c-key { color: #ff7b72; }
+  .c-val { color: #a5d6ff; }
+  .c-str { color: #a8d8a8; }
+  .c-cmt { color: var(--text3); font-style: italic; }
+  .c-num { color: #f8c555; }
+  .c-op  { color: var(--purple); }
+
+  /* ── Tags ── */
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; margin: 2px; }
+  .t-green  { background: var(--green-bg);  color: var(--green); border: 1px solid #1a4a2a; }
+  .t-blue   { background: var(--blue-bg);   color: var(--blue);  border: 1px solid #1a3a5a; }
+  .t-amber  { background: var(--amber-bg);  color: var(--amber); border: 1px solid #3a2a00; }
+  .t-red    { background: var(--red-bg);    color: var(--red);   border: 1px solid #4a1a18; }
+  .t-purple { background: var(--purple-bg); color: var(--purple);border: 1px solid #2a1a4a; }
+  .t-gray   { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: var(--bg3); color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border2); color: var(--text2); vertical-align: top; }
+  td:first-child { color: var(--text); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  /* ── Note boxes ── */
+  .note { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; margin-bottom: 12px; line-height: 1.6; }
+  .note-blue   { background: var(--blue-bg);   border-left: 3px solid var(--blue);   color: #a8caff; }
+  .note-amber  { background: var(--amber-bg);  border-left: 3px solid var(--amber);  color: #f0cc7a; }
+  .note-green  { background: var(--green-bg);  border-left: 3px solid var(--green);  color: #7ee09a; }
+  .note-red    { background: var(--red-bg);    border-left: 3px solid var(--red);    color: #ff9e9a; }
+
+  /* ── Pill grid ── */
+  .pill-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+  /* ── Link ── */
+  a.ext { color: var(--blue); text-decoration: none; font-size: 12px; }
+  a.ext:hover { text-decoration: underline; }
+
+  /* ── Header ── */
+  .top-bar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
+  .top-bar-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .top-bar-sub { font-size: 12px; color: var(--text3); }
+  .octo { width: 24px; height: 24px; }
+
+  h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 18px 0 8px; }
+  h3:first-of-type { margin-top: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 22px 0; }
+  .inline-code { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-family: var(--font-mono); font-size: 11.5px; color: var(--purple); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <svg class="octo" viewBox="0 0 16 16" fill="#e6edf3"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  <div>
+    <div class="top-bar-title">GitHub Actions — Complete Pipeline Reference</div>
+    <div class="top-bar-sub">Triggers · Conditions · Jobs · Runs-on · Uses · Contexts · Secrets</div>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-title">Reference</div>
+  <a class="nav-item active" onclick="show('overview')">Overview</a>
+
+  <div class="nav-section">
+    <div class="sidebar-title">Triggers (on:)</div>
+    <a class="nav-item" onclick="show('push-pull')">push / pull_request</a>
+    <a class="nav-item" onclick="show('schedule')">schedule (cron)</a>
+    <a class="nav-item" onclick="show('manual')">workflow_dispatch</a>
+    <a class="nav-item" onclick="show('other-triggers')">All other triggers</a>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-section">
+    <div class="sidebar-title">Jobs</div>
+    <a class="nav-item" onclick="show('runs-on')">runs-on</a>
+    <a class="nav-item" onclick="show('needs')">needs: (dependency)</a>
+    <a class="nav-item" onclick="show('if-conditions')">if: conditions</a>
+    <a class="nav-item" onclick="show('matrix')">matrix strategy</a>
+    <a class="nav-item" onclick="show('environments')">environment:</a>
+    <a class="nav-item" onclick="show('permissions')">permissions:</a>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-section">
+    <div class="sidebar-title">Steps</div>
+    <a class="nav-item" onclick="show('uses')">uses: (actions)</a>
+    <a class="nav-item" onclick="show('run')">run: (shell)</a>
+    <a class="nav-item" onclick="show('with-env')">with: / env:</a>
+    <a class="nav-item" onclick="show('outputs')">outputs / inputs</a>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-section">
+    <div class="sidebar-title">Contexts & Expressions</div>
+    <a class="nav-item" onclick="show('contexts')">contexts (${{}})</a>
+    <a class="nav-item" onclick="show('secrets-vars')">secrets & variables</a>
+    <a class="nav-item" onclick="show('expressions')">expressions & functions</a>
+  </div>
+
+  <div class="nav-divider"></div>
+  <a class="nav-item" onclick="show('full-example')">Full workflow example</a>
+  <a class="nav-item" onclick="show('links')">Official docs links</a>
+</nav>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+<!-- OVERVIEW -->
+<div id="s-overview" class="section active">
+  <div class="page-title">GitHub Actions Pipeline — complete reference</div>
+  <div class="page-sub">Every part of a workflow file explained with examples. Use the sidebar to jump to any section.</div>
+
+  <div class="card">
+    <div class="card-title">Anatomy of a workflow file</div>
+    <div class="code"><span class="c-cmt"># .github/workflows/ci.yml</span>
+
+<span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">CI Pipeline</span>               <span class="c-cmt"># shown in Actions tab</span>
+
+<span class="c-key">on</span><span class="c-op">:</span>                               <span class="c-cmt"># ① TRIGGER — what starts this</span>
+  <span class="c-key">push</span><span class="c-op">:</span>
+    <span class="c-key">branches</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">main</span><span class="c-op">,</span> <span class="c-str">api</span><span class="c-op">]</span>
+
+<span class="c-key">jobs</span><span class="c-op">:</span>                              <span class="c-cmt"># ② JOBS — units of work</span>
+  <span class="c-key">my-job</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>        <span class="c-cmt"># ③ RUNNER — machine to run on</span>
+    <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.ref == 'refs/heads/main'</span>  <span class="c-cmt"># ④ CONDITION</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>                          <span class="c-cmt"># ⑤ STEPS — commands inside the job</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@v4</span>  <span class="c-cmt"># use a pre-built action</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "Hello World"</span>     <span class="c-cmt"># run a shell command</span></div>
+  </div>
+
+  <table>
+    <tr><th>Section</th><th>What it does</th><th>Required?</th></tr>
+    <tr><td>name:</td><td>Label shown in GitHub Actions tab</td><td>No</td></tr>
+    <tr><td>on:</td><td>What event(s) trigger this workflow</td><td>Yes</td></tr>
+    <tr><td>jobs:</td><td>One or more jobs to run</td><td>Yes</td></tr>
+    <tr><td>runs-on:</td><td>The machine/OS the job runs on</td><td>Yes (per job)</td></tr>
+    <tr><td>steps:</td><td>Ordered list of commands inside a job</td><td>Yes (per job)</td></tr>
+    <tr><td>if:</td><td>Condition that must be true for job/step to run</td><td>No</td></tr>
+    <tr><td>env:</td><td>Environment variables for job or step</td><td>No</td></tr>
+    <tr><td>needs:</td><td>Jobs this job must wait for first</td><td>No</td></tr>
+  </table>
+</div>
+
+<!-- PUSH / PULL_REQUEST -->
+<div id="s-push-pull" class="section">
+  <div class="page-title">push / pull_request triggers</div>
+  <div class="page-sub">The two most common triggers. Control exactly which branches, tags, and file paths activate the workflow.</div>
+
+  <h3>push</h3>
+  <div class="card">
+    <div class="card-desc">Fires when commits are pushed to the repo. Use <span class="inline-code">branches</span>, <span class="inline-code">tags</span>, and <span class="inline-code">paths</span> to narrow it down.</div>
+    <div class="code"><span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">push</span><span class="c-op">:</span>
+    <span class="c-key">branches</span><span class="c-op">:</span>              <span class="c-cmt"># only these branches</span>
+      <span class="c-op">-</span> <span class="c-str">main</span>
+      <span class="c-op">-</span> <span class="c-str">api</span>
+      <span class="c-op">-</span> <span class="c-str">'feature/**'</span>       <span class="c-cmt"># glob — any branch starting with feature/</span>
+      <span class="c-op">-</span> <span class="c-str">'release/v[0-9]+'</span>  <span class="c-cmt"># regex-style glob</span>
+    <span class="c-key">branches-ignore</span><span class="c-op">:</span>       <span class="c-cmt"># skip these branches (cannot use with branches:)</span>
+      <span class="c-op">-</span> <span class="c-str">'dependabot/**'</span>
+    <span class="c-key">tags</span><span class="c-op">:</span>                   <span class="c-cmt"># trigger on tag push</span>
+      <span class="c-op">-</span> <span class="c-str">'v*'</span>                <span class="c-cmt"># v1.0.0, v2.1.3 etc.</span>
+    <span class="c-key">paths</span><span class="c-op">:</span>                  <span class="c-cmt"># only when these files change</span>
+      <span class="c-op">-</span> <span class="c-str">'backend/**'</span>
+      <span class="c-op">-</span> <span class="c-str">'requirements.txt'</span>
+    <span class="c-key">paths-ignore</span><span class="c-op">:</span>           <span class="c-cmt"># skip if only these files change</span>
+      <span class="c-op">-</span> <span class="c-str">'**.md'</span>
+      <span class="c-op">-</span> <span class="c-str">'.gitignore'</span></div>
+  </div>
+
+  <h3>pull_request</h3>
+  <div class="card">
+    <div class="card-desc">Fires on PR events. Default activity types are <span class="inline-code">opened</span>, <span class="inline-code">synchronize</span>, <span class="inline-code">reopened</span>. Add <span class="inline-code">types:</span> to control which PR actions trigger the workflow.</div>
+    <div class="code"><span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">pull_request</span><span class="c-op">:</span>
+    <span class="c-key">branches</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">main</span><span class="c-op">]</span>        <span class="c-cmt"># only PRs targeting main</span>
+    <span class="c-key">types</span><span class="c-op">:</span>                  <span class="c-cmt"># which PR events fire this</span>
+      <span class="c-op">-</span> <span class="c-str">opened</span>             <span class="c-cmt"># PR first created</span>
+      <span class="c-op">-</span> <span class="c-str">synchronize</span>        <span class="c-cmt"># new commits pushed to PR branch</span>
+      <span class="c-op">-</span> <span class="c-str">reopened</span>           <span class="c-cmt"># closed PR reopened</span>
+      <span class="c-op">-</span> <span class="c-str">closed</span>             <span class="c-cmt"># PR closed (merged or not)</span>
+      <span class="c-op">-</span> <span class="c-str">labeled</span>            <span class="c-cmt"># label added to PR</span>
+      <span class="c-op">-</span> <span class="c-str">ready_for_review</span>   <span class="c-cmt"># draft → ready</span>
+      <span class="c-op">-</span> <span class="c-str">review_requested</span>   <span class="c-cmt"># reviewer added</span></div>
+
+    <div class="note note-amber">⚠ <strong>pull_request vs pull_request_target</strong> — use <span class="inline-code">pull_request</span> for CI tests (no secret access for forked PRs). Use <span class="inline-code">pull_request_target</span> only if you need secrets in a fork PR context — it runs in the base repo context.</div>
+  </div>
+
+  <table>
+    <tr><th>Filter key</th><th>Works with</th><th>Cannot combine with</th></tr>
+    <tr><td>branches:</td><td>push, pull_request</td><td>branches-ignore:</td></tr>
+    <tr><td>branches-ignore:</td><td>push, pull_request</td><td>branches:</td></tr>
+    <tr><td>tags:</td><td>push only</td><td>tags-ignore:</td></tr>
+    <tr><td>paths:</td><td>push, pull_request</td><td>paths-ignore:</td></tr>
+    <tr><td>paths-ignore:</td><td>push, pull_request</td><td>paths:</td></tr>
+    <tr><td>types:</td><td>pull_request, issues, etc.</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- SCHEDULE -->
+<div id="s-schedule" class="section">
+  <div class="page-title">schedule — cron triggers</div>
+  <div class="page-sub">Run a workflow automatically on a time schedule using cron syntax. Useful for nightly tests, cleanup jobs, or health checks.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">schedule</span><span class="c-op">:</span>
+    <span class="c-op">-</span> <span class="c-key">cron</span><span class="c-op">:</span> <span class="c-str">'0 2 * * *'</span>      <span class="c-cmt"># every day at 2:00 AM UTC</span>
+    <span class="c-op">-</span> <span class="c-key">cron</span><span class="c-op">:</span> <span class="c-str">'0 9 * * 1-5'</span>    <span class="c-cmt"># weekdays at 9 AM UTC</span>
+    <span class="c-op">-</span> <span class="c-key">cron</span><span class="c-op">:</span> <span class="c-str">'*/15 * * * *'</span>   <span class="c-cmt"># every 15 minutes</span>
+    <span class="c-op">-</span> <span class="c-key">cron</span><span class="c-op">:</span> <span class="c-str">'0 0 1 * *'</span>      <span class="c-cmt"># first day of every month</span></div>
+    <div class="note note-blue">Cron format: <strong>minute hour day-of-month month day-of-week</strong>. All times are UTC. Minimum interval is every 5 minutes. Scheduled workflows only run on the default branch.</div>
+  </div>
+
+  <table>
+    <tr><th>Cron expression</th><th>Meaning</th></tr>
+    <tr><td>0 2 * * *</td><td>Every day at 02:00 UTC</td></tr>
+    <tr><td>0 9 * * 1-5</td><td>Mon–Fri at 09:00 UTC</td></tr>
+    <tr><td>*/15 * * * *</td><td>Every 15 minutes</td></tr>
+    <tr><td>0 0 * * 0</td><td>Every Sunday at midnight</td></tr>
+    <tr><td>0 0 1 * *</td><td>1st of every month</td></tr>
+    <tr><td>0 6,18 * * *</td><td>Twice a day — 06:00 and 18:00</td></tr>
+  </table>
+</div>
+
+<!-- MANUAL -->
+<div id="s-manual" class="section">
+  <div class="page-title">workflow_dispatch — manual trigger</div>
+  <div class="page-sub">Adds a "Run workflow" button to the GitHub Actions UI. You can define inputs so the person running it can pass parameters.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">workflow_dispatch</span><span class="c-op">:</span>
+    <span class="c-key">inputs</span><span class="c-op">:</span>
+      <span class="c-key">environment</span><span class="c-op">:</span>
+        <span class="c-key">description</span><span class="c-op">:</span> <span class="c-str">'Deploy target'</span>
+        <span class="c-key">required</span><span class="c-op">:</span> <span class="c-str">true</span>
+        <span class="c-key">default</span><span class="c-op">:</span> <span class="c-str">'staging'</span>
+        <span class="c-key">type</span><span class="c-op">:</span> <span class="c-str">choice</span>
+        <span class="c-key">options</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">staging</span><span class="c-op">,</span> <span class="c-str">production</span><span class="c-op">]</span>
+      <span class="c-key">run_tests</span><span class="c-op">:</span>
+        <span class="c-key">description</span><span class="c-op">:</span> <span class="c-str">'Run tests before deploy?'</span>
+        <span class="c-key">required</span><span class="c-op">:</span> <span class="c-str">false</span>
+        <span class="c-key">type</span><span class="c-op">:</span> <span class="c-str">boolean</span>
+        <span class="c-key">default</span><span class="c-op">:</span> <span class="c-str">true</span>
+      <span class="c-key">version_tag</span><span class="c-op">:</span>
+        <span class="c-key">description</span><span class="c-op">:</span> <span class="c-str">'Version to deploy (e.g. v1.2.3)'</span>
+        <span class="c-key">type</span><span class="c-op">:</span> <span class="c-str">string</span>
+
+<span class="c-cmt"># Access inputs inside the workflow:</span>
+<span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "Deploying ${{ inputs.environment }}"</span>
+      <span class="c-op">-</span> <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">inputs.run_tests == true</span>
+        <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">pytest</span></div>
+  </div>
+
+  <table>
+    <tr><th>Input type</th><th>UI control</th><th>Values</th></tr>
+    <tr><td>string</td><td>Text box</td><td>Any text</td></tr>
+    <tr><td>boolean</td><td>Checkbox</td><td>true / false</td></tr>
+    <tr><td>choice</td><td>Dropdown</td><td>List from options:</td></tr>
+    <tr><td>environment</td><td>Environment picker</td><td>Your configured environments</td></tr>
+    <tr><td>number</td><td>Number input</td><td>Numeric value</td></tr>
+  </table>
+</div>
+
+<!-- OTHER TRIGGERS -->
+<div id="s-other-triggers" class="section">
+  <div class="page-title">All other triggers</div>
+  <div class="page-sub">Every available event that can trigger a GitHub Actions workflow.</div>
+
+  <table>
+    <tr><th>Trigger</th><th>When it fires</th><th>Common use case</th></tr>
+    <tr><td>push</td><td>Commits pushed to repo</td><td>CI tests on every push</td></tr>
+    <tr><td>pull_request</td><td>PR opened/updated/closed</td><td>CI tests on PRs</td></tr>
+    <tr><td>pull_request_review</td><td>PR review submitted</td><td>Auto-merge when approved</td></tr>
+    <tr><td>schedule</td><td>Cron time schedule</td><td>Nightly tests, cleanup</td></tr>
+    <tr><td>workflow_dispatch</td><td>Manual button click</td><td>Manual deploy, re-run</td></tr>
+    <tr><td>workflow_call</td><td>Called by another workflow</td><td>Reusable workflow library</td></tr>
+    <tr><td>workflow_run</td><td>Another workflow completes</td><td>Run CD after CI finishes</td></tr>
+    <tr><td>release</td><td>Release created/published</td><td>Deploy on GitHub Release</td></tr>
+    <tr><td>create</td><td>Branch or tag created</td><td>Setup environments</td></tr>
+    <tr><td>delete</td><td>Branch or tag deleted</td><td>Cleanup resources</td></tr>
+    <tr><td>issues</td><td>Issue opened/closed/labeled</td><td>Auto-label, assign issues</td></tr>
+    <tr><td>issue_comment</td><td>Comment on issue or PR</td><td>Bot commands via comments</td></tr>
+    <tr><td>label</td><td>Label created/edited/deleted</td><td>Sync label configs</td></tr>
+    <tr><td>milestone</td><td>Milestone created/closed</td><td>Release notes generation</td></tr>
+    <tr><td>discussion</td><td>Discussion created/answered</td><td>Community moderation</td></tr>
+    <tr><td>registry_package</td><td>Package published/updated</td><td>Trigger deploy on package publish</td></tr>
+    <tr><td>deployment</td><td>Deployment created via API</td><td>External deploy orchestration</td></tr>
+    <tr><td>deployment_status</td><td>Deployment status changes</td><td>Notify on deploy success/fail</td></tr>
+    <tr><td>page_build</td><td>GitHub Pages build completes</td><td>Post-pages notifications</td></tr>
+    <tr><td>watch</td><td>Someone stars the repo</td><td>Thank you messages (fun)</td></tr>
+    <tr><td>fork</td><td>Repo is forked</td><td>Welcome message to forkers</td></tr>
+    <tr><td>repository_dispatch</td><td>External HTTP POST to GitHub API</td><td>Trigger from external systems</td></tr>
+    <tr><td>merge_group</td><td>PR added to merge queue</td><td>CI in merge queue</td></tr>
+  </table>
+
+  <h3>workflow_run — trigger after another workflow</h3>
+  <div class="card">
+    <div class="code"><span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">workflow_run</span><span class="c-op">:</span>
+    <span class="c-key">workflows</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">"CI Pipeline"</span><span class="c-op">]</span>  <span class="c-cmt"># name of the other workflow</span>
+    <span class="c-key">types</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">completed</span><span class="c-op">]</span>
+    <span class="c-key">branches</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">main</span><span class="c-op">]</span>
+
+<span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event.workflow_run.conclusion == 'success'</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span></div>
+    <div class="note note-blue">This is how you properly split CI and CD into separate workflow files — CD workflow_run fires when the CI workflow finishes successfully.</div>
+  </div>
+</div>
+
+<!-- RUNS-ON -->
+<div id="s-runs-on" class="section">
+  <div class="page-title">runs-on — runner machines</div>
+  <div class="page-sub">Defines the OS and machine the job runs on. GitHub provides hosted runners; you can also use your own self-hosted runners.</div>
+
+  <h3>GitHub-hosted runners</h3>
+  <table>
+    <tr><th>runs-on value</th><th>OS</th><th>Specs</th><th>Notes</th></tr>
+    <tr><td>ubuntu-latest</td><td>Ubuntu 24.04</td><td>4 CPU, 16GB RAM</td><td>Most common, fastest boot</td></tr>
+    <tr><td>ubuntu-22.04</td><td>Ubuntu 22.04</td><td>4 CPU, 16GB RAM</td><td>Pin for reproducibility</td></tr>
+    <tr><td>ubuntu-20.04</td><td>Ubuntu 20.04</td><td>4 CPU, 16GB RAM</td><td>Legacy support</td></tr>
+    <tr><td>windows-latest</td><td>Windows Server 2022</td><td>4 CPU, 16GB RAM</td><td>Use bat: not sh:</td></tr>
+    <tr><td>windows-2022</td><td>Windows Server 2022</td><td>4 CPU, 16GB RAM</td><td>Pinned version</td></tr>
+    <tr><td>macos-latest</td><td>macOS 14 (M1)</td><td>3 CPU, 7GB RAM</td><td>iOS/macOS builds</td></tr>
+    <tr><td>macos-13</td><td>macOS 13 (Intel)</td><td>4 CPU, 14GB RAM</td><td>x86 macOS builds</td></tr>
+  </table>
+
+  <h3>Self-hosted runners</h3>
+  <div class="card">
+    <div class="code"><span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">self-hosted</span><span class="c-op">,</span> <span class="c-str">linux</span><span class="c-op">,</span> <span class="c-str">x64</span><span class="c-op">]</span>  <span class="c-cmt"># your own machine</span>
+<span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">self-hosted</span><span class="c-op">,</span> <span class="c-str">gpu</span><span class="c-op">]</span>         <span class="c-cmt"># custom label you gave the runner</span></div>
+    <div class="note note-amber">Use self-hosted runners for private network access, GPU jobs, Windows with specific software, or cost savings on heavy workloads.</div>
+  </div>
+
+  <h3>Matrix — run same job on multiple OSes</h3>
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">test</span><span class="c-op">:</span>
+    <span class="c-key">strategy</span><span class="c-op">:</span>
+      <span class="c-key">matrix</span><span class="c-op">:</span>
+        <span class="c-key">os</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">ubuntu-latest</span><span class="c-op">,</span> <span class="c-str">windows-latest</span><span class="c-op">,</span> <span class="c-str">macos-latest</span><span class="c-op">]</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">${{ matrix.os }}</span></div>
+  </div>
+</div>
+
+<!-- NEEDS -->
+<div id="s-needs" class="section">
+  <div class="page-title">needs: — job dependencies</div>
+  <div class="page-sub">Controls the order jobs run. Without needs:, all jobs run in parallel. With needs:, a job waits for others to finish first.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">lint</span><span class="c-op">:</span>                             <span class="c-cmt"># runs immediately</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+
+  <span class="c-key">unit-tests</span><span class="c-op">:</span>                       <span class="c-cmt"># runs immediately (parallel with lint)</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+
+  <span class="c-key">integration-tests</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">unit-tests</span>               <span class="c-cmt"># waits for unit-tests</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+
+  <span class="c-key">docker-build</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">lint</span><span class="c-op">,</span> <span class="c-str">integration-tests</span><span class="c-op">]</span>  <span class="c-cmt"># waits for BOTH</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">docker-build</span>
+    <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">always()</span>                   <span class="c-cmt"># run even if docker-build failed</span></div>
+    <div class="note note-blue">By default a job with needs: only runs if all its dependencies <strong>succeeded</strong>. Use <span class="inline-code">if: always()</span> to run regardless, or <span class="inline-code">if: failure()</span> to run only on failure.</div>
+  </div>
+
+  <h3>Passing data between jobs with outputs</h3>
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">build</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">outputs</span><span class="c-op">:</span>
+      <span class="c-key">image_tag</span><span class="c-op">:</span> <span class="c-str">${{ steps.meta.outputs.tags }}</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">id</span><span class="c-op">:</span> <span class="c-str">meta</span>
+        <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "tags=myimage:latest" >> $GITHUB_OUTPUT</span>
+
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">build</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "Deploy ${{ needs.build.outputs.image_tag }}"</span></div>
+  </div>
+</div>
+
+<!-- IF CONDITIONS -->
+<div id="s-if-conditions" class="section">
+  <div class="page-title">if: — conditions</div>
+  <div class="page-sub">Control whether a job or step runs based on branch, event type, previous job result, or any context value.</div>
+
+  <h3>Common if: patterns</h3>
+  <div class="card">
+    <div class="code"><span class="c-cmt"># Branch conditions</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.ref == 'refs/heads/main'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.ref != 'refs/heads/main'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">startsWith(github.ref, 'refs/heads/feature/')</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">startsWith(github.ref, 'refs/tags/v')</span>
+
+<span class="c-cmt"># Event type conditions</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name == 'push'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name == 'pull_request'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name == 'workflow_dispatch'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name != 'pull_request'</span>
+
+<span class="c-cmt"># PR merge check</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event.pull_request.merged == true</span>
+
+<span class="c-cmt"># Previous job result</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">success()</span>            <span class="c-cmt"># default — runs if all needed jobs passed</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">failure()</span>            <span class="c-cmt"># runs only if a previous step/job failed</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">always()</span>             <span class="c-cmt"># always runs, even after failure</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">cancelled()</span>          <span class="c-cmt"># runs only if workflow was cancelled</span>
+
+<span class="c-cmt"># Specific job result</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">needs.unit-tests.result == 'success'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">needs.unit-tests.result == 'failure'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">needs.unit-tests.result == 'skipped'</span>
+
+<span class="c-cmt"># Actor / environment</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.actor == 'dependabot[bot]'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.actor != 'dependabot[bot]'</span>
+
+<span class="c-cmt"># Manual input (workflow_dispatch)</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">inputs.run_tests == true</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">inputs.environment == 'production'</span>
+
+<span class="c-cmt"># Combine conditions</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.ref == 'refs/heads/main' && github.event_name == 'push'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name == 'push' || github.event_name == 'workflow_dispatch'</span>
+<span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">!startsWith(github.ref, 'refs/heads/dependabot')</span></div>
+  </div>
+
+  <table>
+    <tr><th>Function</th><th>Returns true when</th></tr>
+    <tr><td>success()</td><td>All previous steps/jobs succeeded (default)</td></tr>
+    <tr><td>failure()</td><td>At least one previous step/job failed</td></tr>
+    <tr><td>always()</td><td>Always — regardless of any outcome</td></tr>
+    <tr><td>cancelled()</td><td>Workflow was manually cancelled</td></tr>
+    <tr><td>startsWith(str, prefix)</td><td>String starts with prefix</td></tr>
+    <tr><td>endsWith(str, suffix)</td><td>String ends with suffix</td></tr>
+    <tr><td>contains(str, substring)</td><td>String contains substring</td></tr>
+  </table>
+</div>
+
+<!-- MATRIX -->
+<div id="s-matrix" class="section">
+  <div class="page-title">matrix strategy — parallel job variants</div>
+  <div class="page-sub">Run the same job multiple times with different values. GitHub runs all combinations in parallel.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">test</span><span class="c-op">:</span>
+    <span class="c-key">strategy</span><span class="c-op">:</span>
+      <span class="c-key">fail-fast</span><span class="c-op">:</span> <span class="c-str">false</span>        <span class="c-cmt"># don't cancel others if one fails</span>
+      <span class="c-key">max-parallel</span><span class="c-op">:</span> <span class="c-num">3</span>        <span class="c-cmt"># limit concurrent jobs</span>
+      <span class="c-key">matrix</span><span class="c-op">:</span>
+        <span class="c-key">python-version</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">'3.11'</span><span class="c-op">,</span> <span class="c-str">'3.12'</span><span class="c-op">]</span>
+        <span class="c-key">os</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">ubuntu-latest</span><span class="c-op">,</span> <span class="c-str">windows-latest</span><span class="c-op">]</span>
+        <span class="c-key">exclude</span><span class="c-op">:</span>               <span class="c-cmt"># skip specific combos</span>
+          <span class="c-op">-</span> <span class="c-key">os</span><span class="c-op">:</span> <span class="c-str">windows-latest</span>
+            <span class="c-key">python-version</span><span class="c-op">:</span> <span class="c-str">'3.11'</span>
+        <span class="c-key">include</span><span class="c-op">:</span>               <span class="c-cmt"># add extra combos</span>
+          <span class="c-op">-</span> <span class="c-key">os</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+            <span class="c-key">python-version</span><span class="c-op">:</span> <span class="c-str">'3.13'</span>
+            <span class="c-key">experimental</span><span class="c-op">:</span> <span class="c-str">true</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">${{ matrix.os }}</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/setup-python@v5</span>
+        <span class="c-key">with</span><span class="c-op">:</span>
+          <span class="c-key">python-version</span><span class="c-op">:</span> <span class="c-str">${{ matrix.python-version }}</span></div>
+  </div>
+</div>
+
+<!-- ENVIRONMENTS -->
+<div id="s-environments" class="section">
+  <div class="page-title">environment: — deployment targets</div>
+  <div class="page-sub">Named environments link a job to a configured GitHub Environment — giving access to environment-specific secrets, required reviewers, and deployment history.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">deploy-staging</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">environment</span><span class="c-op">:</span>
+      <span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">staging</span>
+      <span class="c-key">url</span><span class="c-op">:</span> <span class="c-str">https://staging.yourapp.com</span>   <span class="c-cmt"># shown as link in Actions UI</span>
+
+  <span class="c-key">deploy-production</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">deploy-staging</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">environment</span><span class="c-op">:</span>
+      <span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">production</span>                 <span class="c-cmt"># triggers approval gate if configured</span>
+      <span class="c-key">url</span><span class="c-op">:</span> <span class="c-str">https://yourapp.com</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo ${{ secrets.PROD_DB_URL }}</span>  <span class="c-cmt"># env-specific secret</span></div>
+    <div class="note note-green">Set up approval gates at <strong>Settings → Environments → production → Required reviewers</strong>. The workflow pauses and emails the reviewer before the job runs.</div>
+  </div>
+</div>
+
+<!-- PERMISSIONS -->
+<div id="s-permissions" class="section">
+  <div class="page-title">permissions: — token access control</div>
+  <div class="page-sub">Controls what the auto-provided GITHUB_TOKEN can do. Default is read-only. Add write permissions only for jobs that need them.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-cmt"># Workflow-level (applies to all jobs)</span>
+<span class="c-key">permissions</span><span class="c-op">:</span>
+  <span class="c-key">contents</span><span class="c-op">:</span> <span class="c-str">read</span>
+
+<span class="c-cmt"># Job-level (overrides workflow-level for this job)</span>
+<span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">create-pr</span><span class="c-op">:</span>
+    <span class="c-key">permissions</span><span class="c-op">:</span>
+      <span class="c-key">contents</span><span class="c-op">:</span> <span class="c-str">write</span>         <span class="c-cmt"># push commits</span>
+      <span class="c-key">pull-requests</span><span class="c-op">:</span> <span class="c-str">write</span>  <span class="c-cmt"># create / update PRs</span>
+      <span class="c-key">packages</span><span class="c-op">:</span> <span class="c-str">write</span>        <span class="c-cmt"># push to GHCR</span>
+      <span class="c-key">issues</span><span class="c-op">:</span> <span class="c-str">write</span>          <span class="c-cmt"># create / update issues</span>
+      <span class="c-key">statuses</span><span class="c-op">:</span> <span class="c-str">write</span>        <span class="c-cmt"># set commit status</span>
+      <span class="c-key">checks</span><span class="c-op">:</span> <span class="c-str">write</span>          <span class="c-cmt"># create check runs</span>
+      <span class="c-key">deployments</span><span class="c-op">:</span> <span class="c-str">write</span>    <span class="c-cmt"># create deployments</span>
+      <span class="c-key">id-token</span><span class="c-op">:</span> <span class="c-str">write</span>        <span class="c-cmt"># OIDC token for AWS/GCP keyless auth</span></div>
+  </div>
+
+  <table>
+    <tr><th>Permission</th><th>Needed for</th></tr>
+    <tr><td>contents: write</td><td>Push commits, create releases, upload assets</td></tr>
+    <tr><td>pull-requests: write</td><td>Create/update/merge PRs, add labels</td></tr>
+    <tr><td>packages: write</td><td>Push Docker images to GHCR</td></tr>
+    <tr><td>issues: write</td><td>Create/update/close issues</td></tr>
+    <tr><td>id-token: write</td><td>Keyless AWS/GCP auth via OIDC (no stored secrets)</td></tr>
+    <tr><td>deployments: write</td><td>Create deployment records in GitHub</td></tr>
+    <tr><td>checks: write</td><td>Create custom check runs and annotations</td></tr>
+  </table>
+</div>
+
+<!-- USES -->
+<div id="s-uses" class="section">
+  <div class="page-title">uses: — reusable actions</div>
+  <div class="page-sub">Pull in pre-built actions instead of writing shell commands. Four source formats.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-cmt"># Format 1: Public GitHub action (owner/repo@ref)</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@v4</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/build-push-action@v6</span>
+
+<span class="c-cmt"># Format 2: Specific commit SHA (most secure — pin to exact code)</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683</span>
+
+<span class="c-cmt"># Format 3: Local action in same repo</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">./.github/actions/my-custom-action</span>
+
+<span class="c-cmt"># Format 4: Reusable workflow in same repo</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">./.github/workflows/shared-tests.yml</span>
+
+<span class="c-cmt"># Format 5: Docker container as action</span>
+<span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker://alpine:3.19</span></div>
+  </div>
+
+  <h3>Essential actions reference</h3>
+  <table>
+    <tr><th>Action</th><th>Purpose</th></tr>
+    <tr><td>actions/checkout@v4</td><td>Clone repo to runner</td></tr>
+    <tr><td>actions/setup-python@v5</td><td>Install Python + cache pip</td></tr>
+    <tr><td>actions/setup-node@v4</td><td>Install Node.js + cache npm</td></tr>
+    <tr><td>actions/setup-java@v4</td><td>Install Java + cache Maven/Gradle</td></tr>
+    <tr><td>actions/setup-go@v5</td><td>Install Go + cache modules</td></tr>
+    <tr><td>actions/cache@v4</td><td>Save/restore arbitrary folders</td></tr>
+    <tr><td>actions/upload-artifact@v4</td><td>Save files from a job</td></tr>
+    <tr><td>actions/download-artifact@v4</td><td>Retrieve saved files in another job</td></tr>
+    <tr><td>actions/github-script@v7</td><td>Run JS with full GitHub API</td></tr>
+    <tr><td>docker/setup-qemu-action@v3</td><td>ARM CPU emulation</td></tr>
+    <tr><td>docker/setup-buildx-action@v3</td><td>Multi-platform Docker builds</td></tr>
+    <tr><td>docker/login-action@v3</td><td>Authenticate to any registry</td></tr>
+    <tr><td>docker/build-push-action@v6</td><td>Build + push Docker image</td></tr>
+    <tr><td>docker/metadata-action@v5</td><td>Generate image tags from Git refs</td></tr>
+    <tr><td>peter-evans/create-pull-request@v6</td><td>Auto-create PRs from workflow</td></tr>
+    <tr><td>appleboy/ssh-action@v1</td><td>SSH into server, run commands</td></tr>
+    <tr><td>codecov/codecov-action@v4</td><td>Upload coverage to Codecov</td></tr>
+    <tr><td>slackapi/slack-github-action@v1</td><td>Post Slack messages</td></tr>
+    <tr><td>softprops/action-gh-release@v2</td><td>Create GitHub Releases</td></tr>
+  </table>
+</div>
+
+<!-- RUN -->
+<div id="s-run" class="section">
+  <div class="page-title">run: — shell commands</div>
+  <div class="page-sub">Execute shell commands directly on the runner. Default shell is bash on Linux/Mac, PowerShell on Windows.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">steps</span><span class="c-op">:</span>
+  <span class="c-cmt"># Single line</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">npm test</span>
+
+  <span class="c-cmt"># Multi-line with pipe</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-op">|</span>
+      <span class="c-str">echo "Installing..."</span>
+      <span class="c-str">pip install -r requirements.txt</span>
+      <span class="c-str">pytest --tb=short</span>
+
+  <span class="c-cmt"># Choose shell explicitly</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">Get-Date</span>
+    <span class="c-key">shell</span><span class="c-op">:</span> <span class="c-str">pwsh</span>                  <span class="c-cmt"># PowerShell</span>
+
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "bash only"</span>
+    <span class="c-key">shell</span><span class="c-op">:</span> <span class="c-str">bash</span>
+
+  <span class="c-cmt"># Set working directory</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">pytest</span>
+    <span class="c-key">working-directory</span><span class="c-op">:</span> <span class="c-str">./backend</span>
+
+  <span class="c-cmt"># Write to GITHUB_OUTPUT (pass values to next steps)</span>
+  <span class="c-op">-</span> <span class="c-key">id</span><span class="c-op">:</span> <span class="c-str">version</span>
+    <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "tag=v1.0.0" >> $GITHUB_OUTPUT</span>
+
+  <span class="c-cmt"># Write to GITHUB_ENV (set env var for all following steps)</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "NODE_ENV=production" >> $GITHUB_ENV</span>
+
+  <span class="c-cmt"># Continue even if this step fails</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">flake8 . || true</span>
+    <span class="c-key">continue-on-error</span><span class="c-op">:</span> <span class="c-str">true</span></div>
+  </div>
+
+  <table>
+    <tr><th>Shell option</th><th>Platform</th></tr>
+    <tr><td>bash</td><td>Linux, macOS (default)</td></tr>
+    <tr><td>sh</td><td>Linux, macOS</td></tr>
+    <tr><td>pwsh</td><td>PowerShell 7 (all platforms)</td></tr>
+    <tr><td>powershell</td><td>PowerShell 5 (Windows only)</td></tr>
+    <tr><td>cmd</td><td>Windows CMD</td></tr>
+    <tr><td>python</td><td>Run as Python script</td></tr>
+  </table>
+</div>
+
+<!-- WITH / ENV -->
+<div id="s-with-env" class="section">
+  <div class="page-title">with: and env:</div>
+  <div class="page-sub"><span class="inline-code">with:</span> passes inputs to actions. <span class="inline-code">env:</span> sets environment variables for steps or jobs.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">steps</span><span class="c-op">:</span>
+  <span class="c-cmt"># with: passes named inputs to a `uses:` action</span>
+  <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/setup-node@v4</span>
+    <span class="c-key">with</span><span class="c-op">:</span>
+      <span class="c-key">node-version</span><span class="c-op">:</span> <span class="c-str">'20'</span>
+      <span class="c-key">cache</span><span class="c-op">:</span> <span class="c-str">'npm'</span>
+
+  <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/build-push-action@v6</span>
+    <span class="c-key">with</span><span class="c-op">:</span>
+      <span class="c-key">context</span><span class="c-op">:</span> <span class="c-str">.</span>
+      <span class="c-key">push</span><span class="c-op">:</span> <span class="c-str">true</span>
+      <span class="c-key">platforms</span><span class="c-op">:</span> <span class="c-str">linux/amd64,linux/arm64</span>
+      <span class="c-key">tags</span><span class="c-op">:</span> <span class="c-str">myimage:latest</span>
+
+  <span class="c-cmt"># env: on a step — only available in that step</span>
+  <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">python deploy.py</span>
+    <span class="c-key">env</span><span class="c-op">:</span>
+      <span class="c-key">DATABASE_URL</span><span class="c-op">:</span> <span class="c-str">${{ secrets.DATABASE_URL }}</span>
+      <span class="c-key">APP_ENV</span><span class="c-op">:</span> <span class="c-str">production</span>
+
+<span class="c-cmt"># env: on a job — available to all steps in the job</span>
+<span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">test</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">env</span><span class="c-op">:</span>
+      <span class="c-key">PYTHON_ENV</span><span class="c-op">:</span> <span class="c-str">test</span>
+      <span class="c-key">API_URL</span><span class="c-op">:</span> <span class="c-str">http://localhost:8000</span>
+
+<span class="c-cmt"># env: at workflow level — available to all jobs</span>
+<span class="c-key">env</span><span class="c-op">:</span>
+  <span class="c-key">REGISTRY</span><span class="c-op">:</span> <span class="c-str">ghcr.io</span>
+  <span class="c-key">IMAGE_NAME</span><span class="c-op">:</span> <span class="c-str">${{ github.repository }}</span></div>
+  </div>
+</div>
+
+<!-- OUTPUTS -->
+<div id="s-outputs" class="section">
+  <div class="page-title">outputs / inputs — sharing data</div>
+  <div class="page-sub">Pass values between steps within a job, and between jobs using outputs.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">build</span><span class="c-op">:</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">outputs</span><span class="c-op">:</span>                          <span class="c-cmt"># declare job outputs</span>
+      <span class="c-key">version</span><span class="c-op">:</span> <span class="c-str">${{ steps.get_ver.outputs.version }}</span>
+      <span class="c-key">image</span><span class="c-op">:</span>   <span class="c-str">${{ steps.meta.outputs.tags }}</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">id</span><span class="c-op">:</span> <span class="c-str">get_ver</span>
+        <span class="c-key">run</span><span class="c-op">:</span> <span class="c-op">|</span>
+          <span class="c-str">VER=$(cat version.txt)</span>
+          <span class="c-str">echo "version=$VER" >> $GITHUB_OUTPUT</span>
+
+      <span class="c-cmt"># Use in a later step of the SAME job</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "Version is ${{ steps.get_ver.outputs.version }}"</span>
+
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">build</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-cmt"># Use output from ANOTHER job via needs context</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "Deploy ${{ needs.build.outputs.image }}"</span></div>
+  </div>
+</div>
+
+<!-- CONTEXTS -->
+<div id="s-contexts" class="section">
+  <div class="page-title">Contexts — ${{ }} expressions</div>
+  <div class="page-sub">Contexts give you access to information about the workflow run, repo, runner, and more.</div>
+
+  <table>
+    <tr><th>Context</th><th>Key values</th></tr>
+    <tr><td>github.ref</td><td>refs/heads/main, refs/tags/v1.0.0</td></tr>
+    <tr><td>github.ref_name</td><td>main, v1.0.0 (short version)</td></tr>
+    <tr><td>github.event_name</td><td>push, pull_request, workflow_dispatch</td></tr>
+    <tr><td>github.sha</td><td>Full commit SHA (40 chars)</td></tr>
+    <tr><td>github.actor</td><td>Username who triggered the workflow</td></tr>
+    <tr><td>github.repository</td><td>owner/repo-name</td></tr>
+    <tr><td>github.run_id</td><td>Unique ID of this workflow run</td></tr>
+    <tr><td>github.run_number</td><td>Sequential run counter (1, 2, 3…)</td></tr>
+    <tr><td>github.workspace</td><td>Absolute path to checked-out code</td></tr>
+    <tr><td>github.server_url</td><td>https://github.com</td></tr>
+    <tr><td>runner.os</td><td>Linux, Windows, macOS</td></tr>
+    <tr><td>runner.arch</td><td>X64, ARM64</td></tr>
+    <tr><td>runner.temp</td><td>Path to temp directory</td></tr>
+    <tr><td>env.MY_VAR</td><td>Value of environment variable MY_VAR</td></tr>
+    <tr><td>secrets.MY_SECRET</td><td>Value of secret MY_SECRET</td></tr>
+    <tr><td>inputs.my_input</td><td>workflow_dispatch input value</td></tr>
+    <tr><td>needs.job-name.outputs.key</td><td>Output from a previous job</td></tr>
+    <tr><td>steps.step-id.outputs.key</td><td>Output from a previous step</td></tr>
+    <tr><td>matrix.variable</td><td>Current matrix value</td></tr>
+    <tr><td>job.status</td><td>success, failure, cancelled</td></tr>
+  </table>
+</div>
+
+<!-- SECRETS & VARS -->
+<div id="s-secrets-vars" class="section">
+  <div class="page-title">Secrets &amp; variables</div>
+  <div class="page-sub">Encrypted secrets for sensitive values. Plain variables for non-sensitive config.</div>
+
+  <div class="card">
+    <div class="code"><span class="c-cmt"># Secrets — encrypted, masked in logs</span>
+<span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">deploy.sh</span>
+  <span class="c-key">env</span><span class="c-op">:</span>
+    <span class="c-key">DB_URL</span><span class="c-op">:</span>  <span class="c-str">${{ secrets.DATABASE_URL }}</span>
+    <span class="c-key">SSH_KEY</span><span class="c-op">:</span> <span class="c-str">${{ secrets.SERVER_SSH_KEY }}</span>
+    <span class="c-key">TOKEN</span><span class="c-op">:</span>   <span class="c-str">${{ secrets.GITHUB_TOKEN }}</span>   <span class="c-cmt"># auto-provided</span>
+
+<span class="c-cmt"># Variables — plain text, visible in logs</span>
+<span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo ${{ vars.APP_ENV }}</span>
+<span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo ${{ vars.NODE_VERSION }}</span>
+
+<span class="c-cmt"># Environment-specific secret (only available when</span>
+<span class="c-cmt"># the job declares environment: production)</span>
+<span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo ${{ secrets.PROD_API_KEY }}</span></div>
+  </div>
+
+  <div class="note note-red">🔒 Never print a secret with <span class="inline-code">echo $SECRET</span> — GitHub will mask it in logs but it's still bad practice. Pass secrets via env: instead of shell variables.</div>
+
+  <table>
+    <tr><th></th><th>Secrets</th><th>Variables</th></tr>
+    <tr><td>Encrypted</td><td>Yes</td><td>No</td></tr>
+    <tr><td>Visible in logs</td><td>No (masked)</td><td>Yes</td></tr>
+    <tr><td>Readable back</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Use for</td><td>Passwords, tokens, keys</td><td>APP_ENV, versions, URLs</td></tr>
+    <tr><td>Syntax</td><td>$&#123;&#123; secrets.NAME &#125;&#125;</td><td>$&#123;&#123; vars.NAME &#125;&#125;</td></tr>
+  </table>
+</div>
+
+<!-- EXPRESSIONS -->
+<div id="s-expressions" class="section">
+  <div class="page-title">Expressions &amp; functions</div>
+  <div class="page-sub">Built-in functions you can use inside <span class="inline-code">${{ }}</span> expressions and <span class="inline-code">if:</span> conditions.</div>
+
+  <table>
+    <tr><th>Function</th><th>Example</th><th>Returns</th></tr>
+    <tr><td>contains()</td><td>contains(github.ref, 'main')</td><td>true/false</td></tr>
+    <tr><td>startsWith()</td><td>startsWith(github.ref, 'refs/tags')</td><td>true/false</td></tr>
+    <tr><td>endsWith()</td><td>endsWith(github.ref, 'main')</td><td>true/false</td></tr>
+    <tr><td>format()</td><td>format('Hello {0}', github.actor)</td><td>string</td></tr>
+    <tr><td>join()</td><td>join(matrix.os, ', ')</td><td>string</td></tr>
+    <tr><td>toJSON()</td><td>toJSON(github.event)</td><td>JSON string</td></tr>
+    <tr><td>fromJSON()</td><td>fromJSON(steps.x.outputs.data)</td><td>object</td></tr>
+    <tr><td>hashFiles()</td><td>hashFiles('**/package-lock.json')</td><td>hash string</td></tr>
+    <tr><td>success()</td><td>if: success()</td><td>true if all passed</td></tr>
+    <tr><td>failure()</td><td>if: failure()</td><td>true if any failed</td></tr>
+    <tr><td>always()</td><td>if: always()</td><td>always true</td></tr>
+    <tr><td>cancelled()</td><td>if: cancelled()</td><td>true if cancelled</td></tr>
+  </table>
+
+  <div class="card">
+    <div class="code"><span class="c-cmt"># hashFiles is very useful for cache keys</span>
+<span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/cache@v4</span>
+  <span class="c-key">with</span><span class="c-op">:</span>
+    <span class="c-key">path</span><span class="c-op">:</span> <span class="c-str">~/.cache/pip</span>
+    <span class="c-key">key</span><span class="c-op">:</span> <span class="c-str">${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}</span>
+    <span class="c-cmt"># cache key changes only when requirements.txt changes</span>
+
+<span class="c-cmt"># format() for dynamic strings</span>
+<span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">echo "${{ format('Running on {0} as {1}', runner.os, github.actor) }}"</span></div>
+  </div>
+</div>
+
+<!-- FULL EXAMPLE -->
+<div id="s-full-example" class="section">
+  <div class="page-title">Full workflow example</div>
+  <div class="page-sub">A complete CI/CD workflow using everything covered in this reference.</div>
+  <div class="card">
+    <div class="code"><span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">Full CI/CD Pipeline</span>
+
+<span class="c-key">on</span><span class="c-op">:</span>
+  <span class="c-key">push</span><span class="c-op">:</span>
+    <span class="c-key">branches</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">api</span><span class="c-op">,</span> <span class="c-str">main</span><span class="c-op">]</span>
+    <span class="c-key">paths-ignore</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">'**.md'</span><span class="c-op">]</span>
+  <span class="c-key">pull_request</span><span class="c-op">:</span>
+    <span class="c-key">branches</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">main</span><span class="c-op">]</span>
+  <span class="c-key">workflow_dispatch</span><span class="c-op">:</span>
+    <span class="c-key">inputs</span><span class="c-op">:</span>
+      <span class="c-key">deploy_env</span><span class="c-op">:</span>
+        <span class="c-key">type</span><span class="c-op">:</span> <span class="c-str">choice</span>
+        <span class="c-key">options</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">staging</span><span class="c-op">,</span> <span class="c-str">production</span><span class="c-op">]</span>
+        <span class="c-key">default</span><span class="c-op">:</span> <span class="c-str">staging</span>
+
+<span class="c-key">env</span><span class="c-op">:</span>
+  <span class="c-key">REGISTRY</span><span class="c-op">:</span> <span class="c-str">ghcr.io</span>
+  <span class="c-key">IMAGE</span><span class="c-op">:</span> <span class="c-str">${{ github.repository }}</span>
+
+<span class="c-key">jobs</span><span class="c-op">:</span>
+  <span class="c-key">ci</span><span class="c-op">:</span>
+    <span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">Run tests</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">strategy</span><span class="c-op">:</span>
+      <span class="c-key">matrix</span><span class="c-op">:</span>
+        <span class="c-key">python</span><span class="c-op">:</span> <span class="c-op">[</span><span class="c-str">'3.11'</span><span class="c-op">,</span> <span class="c-str">'3.12'</span><span class="c-op">]</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@v4</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/setup-python@v5</span>
+        <span class="c-key">with</span><span class="c-op">:</span> <span class="c-op">{</span><span class="c-key">python-version</span><span class="c-op">:</span> <span class="c-str">"${{ matrix.python }}"</span><span class="c-op">,</span> <span class="c-key">cache</span><span class="c-op">:</span> <span class="c-str">pip</span><span class="c-op">}</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">pip install -r backend/requirements.txt</span>
+      <span class="c-op">-</span> <span class="c-key">run</span><span class="c-op">:</span> <span class="c-str">pytest backend/test -v --tb=short</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/upload-artifact@v4</span>
+        <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">always()</span>
+        <span class="c-key">with</span><span class="c-op">:</span> <span class="c-op">{</span><span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">report</span><span class="c-op">,</span> <span class="c-key">path</span><span class="c-op">:</span> <span class="c-str">report.xml</span><span class="c-op">}</span>
+
+  <span class="c-key">auto-pr</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">ci</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.event_name == 'push' && github.ref == 'refs/heads/api'</span>
+    <span class="c-key">permissions</span><span class="c-op">:</span> <span class="c-op">{</span><span class="c-key">contents</span><span class="c-op">:</span> <span class="c-str">write</span><span class="c-op">,</span> <span class="c-key">pull-requests</span><span class="c-op">:</span> <span class="c-str">write</span><span class="c-op">}</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@v4</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">peter-evans/create-pull-request@v6</span>
+        <span class="c-key">with</span><span class="c-op">:</span>
+          <span class="c-key">token</span><span class="c-op">:</span> <span class="c-str">${{ secrets.GITHUB_TOKEN }}</span>
+          <span class="c-key">base</span><span class="c-op">:</span> <span class="c-str">main</span>
+          <span class="c-key">title</span><span class="c-op">:</span> <span class="c-str">"✅ CI passed — ${{ github.sha }}"</span>
+
+  <span class="c-key">docker</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">ci</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">if</span><span class="c-op">:</span> <span class="c-str">github.ref == 'refs/heads/main' && github.event_name == 'push'</span>
+    <span class="c-key">permissions</span><span class="c-op">:</span> <span class="c-op">{</span><span class="c-key">contents</span><span class="c-op">:</span> <span class="c-str">read</span><span class="c-op">,</span> <span class="c-key">packages</span><span class="c-op">:</span> <span class="c-str">write</span><span class="c-op">}</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">actions/checkout@v4</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/setup-qemu-action@v3</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/setup-buildx-action@v3</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/login-action@v3</span>
+        <span class="c-key">with</span><span class="c-op">:</span>
+          <span class="c-key">registry</span><span class="c-op">:</span> <span class="c-str">ghcr.io</span>
+          <span class="c-key">username</span><span class="c-op">:</span> <span class="c-str">${{ github.actor }}</span>
+          <span class="c-key">password</span><span class="c-op">:</span> <span class="c-str">${{ secrets.GITHUB_TOKEN }}</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">docker/build-push-action@v6</span>
+        <span class="c-key">with</span><span class="c-op">:</span>
+          <span class="c-key">push</span><span class="c-op">:</span> <span class="c-str">true</span>
+          <span class="c-key">platforms</span><span class="c-op">:</span> <span class="c-str">linux/amd64,linux/arm64</span>
+          <span class="c-key">tags</span><span class="c-op">:</span> <span class="c-str">ghcr.io/${{ github.repository }}:main</span>
+          <span class="c-key">cache-from</span><span class="c-op">:</span> <span class="c-str">type=gha</span>
+          <span class="c-key">cache-to</span><span class="c-op">:</span> <span class="c-str">type=gha,mode=max</span>
+
+  <span class="c-key">deploy</span><span class="c-op">:</span>
+    <span class="c-key">needs</span><span class="c-op">:</span> <span class="c-str">docker</span>
+    <span class="c-key">runs-on</span><span class="c-op">:</span> <span class="c-str">ubuntu-latest</span>
+    <span class="c-key">environment</span><span class="c-op">:</span>
+      <span class="c-key">name</span><span class="c-op">:</span> <span class="c-str">production</span>
+      <span class="c-key">url</span><span class="c-op">:</span> <span class="c-str">https://yourapp.com</span>
+    <span class="c-key">steps</span><span class="c-op">:</span>
+      <span class="c-op">-</span> <span class="c-key">uses</span><span class="c-op">:</span> <span class="c-str">appleboy/ssh-action@v1</span>
+        <span class="c-key">with</span><span class="c-op">:</span>
+          <span class="c-key">host</span><span class="c-op">:</span>     <span class="c-str">${{ secrets.SERVER_HOST }}</span>
+          <span class="c-key">username</span><span class="c-op">:</span> <span class="c-str">${{ secrets.SERVER_USER }}</span>
+          <span class="c-key">key</span><span class="c-op">:</span>      <span class="c-str">${{ secrets.SERVER_SSH_KEY }}</span>
+          <span class="c-key">script</span><span class="c-op">:</span> <span class="c-op">|</span>
+            <span class="c-str">docker pull ghcr.io/${{ github.repository }}:main</span>
+            <span class="c-str">docker stop app || true</span>
+            <span class="c-str">docker run -d --name app --restart unless-stopped \</span>
+            <span class="c-str">  -p 8000:8000 ghcr.io/${{ github.repository }}:main</span>
+            <span class="c-str">curl -f http://localhost:8000/health</span></div>
+  </div>
+</div>
+
+<!-- LINKS -->
+<div id="s-links" class="section">
+  <div class="page-title">Official documentation links</div>
+  <div class="page-sub">All GitHub Actions reference pages — bookmark these.</div>
+
+  <div class="card">
+    <div class="card-title">Core reference</div>
+    <table>
+      <tr><th>Topic</th><th>Link</th></tr>
+      <tr><td>Workflow syntax (complete)</td><td><a class="ext" href="https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions" target="_blank">docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions</a></td></tr>
+      <tr><td>All trigger events</td><td><a class="ext" href="https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows" target="_blank">docs.github.com → events-that-trigger-workflows</a></td></tr>
+      <tr><td>Contexts reference</td><td><a class="ext" href="https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs" target="_blank">docs.github.com → accessing-contextual-information</a></td></tr>
+      <tr><td>Expressions & functions</td><td><a class="ext" href="https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/evaluate-expressions-in-workflows-and-actions" target="_blank">docs.github.com → evaluate-expressions</a></td></tr>
+      <tr><td>Variables & secrets</td><td><a class="ext" href="https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions" target="_blank">docs.github.com → using-secrets-in-github-actions</a></td></tr>
+      <tr><td>Environments</td><td><a class="ext" href="https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment" target="_blank">docs.github.com → managing-environments-for-deployment</a></td></tr>
+      <tr><td>Reusable workflows</td><td><a class="ext" href="https://docs.github.com/en/actions/sharing-automations/reusing-workflows" target="_blank">docs.github.com → reusing-workflows</a></td></tr>
+      <tr><td>GitHub-hosted runners</td><td><a class="ext" href="https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners" target="_blank">docs.github.com → about-github-hosted-runners</a></td></tr>
+      <tr><td>Permissions (GITHUB_TOKEN)</td><td><a class="ext" href="https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication" target="_blank">docs.github.com → automatic-token-authentication</a></td></tr>
+      <tr><td>Caching dependencies</td><td><a class="ext" href="https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows" target="_blank">docs.github.com → caching-dependencies</a></td></tr>
+      <tr><td>Actions marketplace</td><td><a class="ext" href="https://github.com/marketplace?type=actions" target="_blank">github.com/marketplace?type=actions</a></td></tr>
+      <tr><td>Starter workflows</td><td><a class="ext" href="https://github.com/actions/starter-workflows" target="_blank">github.com/actions/starter-workflows</a></td></tr>
+    </table>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  document.querySelector('.main').scrollTop = 0;
+}
+</script>
+</body>
+</html>
